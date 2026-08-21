@@ -1,0 +1,47 @@
+name: Heavy Worker — Test CodeCell
+# Section 4, step 6. Dispatched by the ondine-gateway Worker
+# (worker/src/index.js -> dispatchHeavyWorker) after a Fast Worker
+# generates code for a cell. Runs on the public-repo unmetered runner
+# (Section 2's Heavy Worker row) — keep this repo public to stay uncapped.
+#
+# NOT ACTIVE YET: GitHub blocks pushing into .github/workflows/ from a
+# token without the `workflow` scope (this build's token doesn't have it,
+# by design — it's a narrower scope than a full workflow-editing token).
+# Move this file to .github/workflows/test.yml yourself (one commit) to
+# activate it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      cell_id:
+        description: "code_cells.id to test"
+        required: true
+        type: string
+      workflow_instance_id:
+        description: "Cloudflare Workflow instance id waiting on the result"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  run-headless-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch cell code from Turso, run headless tests, report back
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          GATEWAY_BEARER_TOKEN: ${{ secrets.GATEWAY_BEARER_TOKEN }}
+          CELL_ID: ${{ inputs.cell_id }}
+          WORKFLOW_INSTANCE_ID: ${{ inputs.workflow_instance_id }}
+        run: python scripts/run_heavy_worker.py
