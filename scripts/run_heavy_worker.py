@@ -3,7 +3,7 @@
 Heavy Worker (Section 4, step 6).
 
 Pulls a CodeCell's generated code from Turso, runs a headless test pass on
-it, and reports pass/fail + log back to the ondine-gateway Worker so the
+it, and reports pass/fail + log back to the turso-github-mcp Worker so the
 waiting CodeCellWorkflow instance (Section 4f, step.waitForEvent) can
 resume. Uses only the stdlib so no pip install / extra Action minutes are
 spent on dependency setup.
@@ -17,8 +17,8 @@ from pathlib import Path
 
 TURSO_DATABASE_URL = os.environ["TURSO_DATABASE_URL"]
 TURSO_AUTH_TOKEN = os.environ["TURSO_AUTH_TOKEN"]
-GATEWAY_URL = os.environ["GATEWAY_URL"].rstrip("/")
-GATEWAY_BEARER_TOKEN = os.environ["GATEWAY_BEARER_TOKEN"]
+GATEWAY_URL = os.environ["GATEWAY_URL"].rstrip("/")  # e.g. https://turso-github-mcp.<subdomain>.workers.dev
+HEAVY_WORKER_CALLBACK_TOKEN = os.environ["HEAVY_WORKER_CALLBACK_TOKEN"]
 CELL_ID = os.environ["CELL_ID"]
 WORKFLOW_INSTANCE_ID = os.environ["WORKFLOW_INSTANCE_ID"]
 
@@ -102,7 +102,7 @@ def report_result(passed, log):
         f"{GATEWAY_URL}/webhook/heavy-worker-result",
         data=body,
         headers={
-            "Authorization": f"Bearer {GATEWAY_BEARER_TOKEN}",
+            "Authorization": f"Bearer {HEAVY_WORKER_CALLBACK_TOKEN}",
             "Content-Type": "application/json",
         },
         method="POST",
