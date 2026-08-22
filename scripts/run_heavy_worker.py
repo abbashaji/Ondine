@@ -22,6 +22,13 @@ HEAVY_WORKER_CALLBACK_TOKEN = os.environ["HEAVY_WORKER_CALLBACK_TOKEN"]
 CELL_ID = os.environ["CELL_ID"]
 WORKFLOW_INSTANCE_ID = os.environ["WORKFLOW_INSTANCE_ID"]
 
+# Cloudflare's edge applies bot protection to *.workers.dev subdomains that
+# isn't configurable from this account's own dashboard (it's not our zone).
+# urllib's default "Python-urllib/3.x" User-Agent gets a bare 403 from that
+# edge layer before the request ever reaches the Worker's own code. A
+# normal-looking UA avoids it.
+USER_AGENT = "Mozilla/5.0 (compatible; OndineHeavyWorker/1.0; +https://github.com/abbashaji/ondine)"
+
 
 def turso_query(sql, args=None):
     url = TURSO_DATABASE_URL.replace("libsql://", "https://") + "/v2/pipeline"
@@ -43,6 +50,7 @@ def turso_query(sql, args=None):
         headers={
             "Authorization": f"Bearer {TURSO_AUTH_TOKEN}",
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
         },
         method="POST",
     )
@@ -104,6 +112,7 @@ def report_result(passed, log):
         headers={
             "Authorization": f"Bearer {HEAVY_WORKER_CALLBACK_TOKEN}",
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
         },
         method="POST",
     )
